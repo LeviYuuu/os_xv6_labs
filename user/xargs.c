@@ -10,6 +10,7 @@ int main(int argc, char *argv[])
     for (p = 0; p < argc; p++) // 先把xargs自带的参数读进去
         args[p] = argv[p];
     char buf[256];
+
     while (1) // 进入循环，每次读一行内容
     {
         int i = 0;
