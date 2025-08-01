@@ -1,5 +1,7 @@
+#include "defs.h"
 // Saved registers for kernel context switches.
-struct context {
+struct context
+{
   uint64 ra;
   uint64 sp;
 
@@ -19,11 +21,12 @@ struct context {
 };
 
 // Per-CPU state.
-struct cpu {
-  struct proc *proc;          // The process running on this cpu, or null.
-  struct context context;     // swtch() here to enter scheduler().
-  int noff;                   // Depth of push_off() nesting.
-  int intena;                 // Were interrupts enabled before push_off()?
+struct cpu
+{
+  struct proc *proc;      // The process running on this cpu, or null.
+  struct context context; // swtch() here to enter scheduler().
+  int noff;               // Depth of push_off() nesting.
+  int intena;             // Were interrupts enabled before push_off()?
 };
 
 extern struct cpu cpus[NCPU];
@@ -41,7 +44,8 @@ extern struct cpu cpus[NCPU];
 // the trapframe includes callee-saved user registers like s0-s11 because the
 // return-to-user path via usertrapret() doesn't return through
 // the entire kernel call stack.
-struct trapframe {
+struct trapframe
+{
   /*   0 */ uint64 kernel_satp;   // kernel page table
   /*   8 */ uint64 kernel_sp;     // top of process's kernel stack
   /*  16 */ uint64 kernel_trap;   // usertrap()
@@ -79,20 +83,39 @@ struct trapframe {
   /* 272 */ uint64 t5;
   /* 280 */ uint64 t6;
 };
-
-enum procstate { UNUSED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+#define VMASIZE 16
+struct vma
+{
+  struct file *file; // 指向映射文件的指针
+  int fd;            // 文件描述符
+  int used;          // 标志该 VMA 是否被使用
+  uint64 addr;       // 虚拟内存区域的起始地址
+  int length;        // 虚拟内存区域的长度
+  int prot;          // 内存保护标志
+  int flags;         // 映射标志
+  int offset;        // 文件偏移量
+};
+enum procstate
+{
+  UNUSED,
+  SLEEPING,
+  RUNNABLE,
+  RUNNING,
+  ZOMBIE
+};
 
 // Per-process state
-struct proc {
+struct proc
+{
   struct spinlock lock;
 
   // p->lock must be held when using these:
-  enum procstate state;        // Process state
-  struct proc *parent;         // Parent process
-  void *chan;                  // If non-zero, sleeping on chan
-  int killed;                  // If non-zero, have been killed
-  int xstate;                  // Exit status to be returned to parent's wait
-  int pid;                     // Process ID
+  enum procstate state; // Process state
+  struct proc *parent;  // Parent process
+  void *chan;           // If non-zero, sleeping on chan
+  int killed;           // If non-zero, have been killed
+  int xstate;           // Exit status to be returned to parent's wait
+  int pid;              // Process ID
 
   // these are private to the process, so p->lock need not be held.
   uint64 kstack;               // Virtual address of kernel stack
@@ -103,4 +126,5 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+  struct vma vma[VMASIZE];
 };
